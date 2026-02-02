@@ -1,0 +1,44 @@
+name: Build CLI Binaries
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os: [linux, windows]
+        arch: [amd64, arm64]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Create artifacts dir
+        run: mkdir -p artifacts
+
+      - name: Build binary
+        run: |
+          EXT=""
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            EXT=".exe"
+          fi
+
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} \
+          go build -o artifacts/emily-${{ matrix.os }}-${{ matrix.arch }}$EXT main.go
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: artifacts
+
